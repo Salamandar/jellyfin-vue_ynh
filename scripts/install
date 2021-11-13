@@ -77,11 +77,15 @@ chown -R $app:www-data "$final_path"
 ynh_exec_as "$app" git clone "$source_repository" "$final_path/jellyfin-vue"
 
 ynh_use_nodejs
-
 pushd $final_path/jellyfin-vue
+	# Workaround for https://github.com/imagemin/optipng-bin/issues/118
+	CPPFLAGS="-DPNG_ARM_NEON_OPT=0" \
+	ynh_exec_warn_less ynh_exec_as $app $ynh_node_load_PATH $ynh_npm install optipng-bin
 	ynh_exec_warn_less ynh_exec_as $app $ynh_node_load_PATH $ynh_npm install
 	ynh_exec_warn_less ynh_exec_as $app $ynh_node_load_PATH $ynh_npm run build:static
 popd
+rm -rf "$final_path/www"
+ynh_exec_warn_less ynh_exec_as $app cp -R "$final_path/jellyfin-vue/src/dist" "$final_path/www"
 
 #=================================================
 # NGINX CONFIGURATION
